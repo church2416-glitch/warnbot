@@ -250,6 +250,21 @@ async def reset_db(interaction: discord.Interaction):
     conn.commit()
     await interaction.response.send_message("✅ DB 초기화 성공.", ephemeral=True)
 
+
+
+#재부팅
+
+@bot.tree.command(name="재부팅", description="봇을 재시작합니다. (관리자 전용)")
+@app_commands.checks.has_permissions(administrator=True)
+async def reboot(interaction: discord.Interaction):
+    await interaction.response.send_message("🔄 봇을 재부팅합니다. 잠시만 기다려주세요...", ephemeral=True)
+    
+    # 데이터베이스 연결 안전하게 종료
+    conn.close()
+    
+    # 봇 프로세스 종료 -> Heroku가 이를 감지하고 자동으로 켬
+    print("재부팅 명령어로 인해 프로세스를 종료합니다.")
+    os._exit(0)
 # --- 실행 ---
 scheduler = AsyncIOScheduler()
 
