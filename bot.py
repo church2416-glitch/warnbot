@@ -104,14 +104,14 @@ async def remove_expired_warnings():
                 log_ch = bot.get_channel(settings[1])
                 if log_ch:
                     embed = discord.Embed(
-                        title="🕒 경고 기간 만료 알림",
+                        title=" 경고 기간 만료 알림",
                         description=f"{member.mention}님의 경고가 시간이 경과되어 자동 해제되었습니다.",
                         color=0x3498db, # 하늘색
                         timestamp=datetime.datetime.now(datetime.timezone.utc)
                     )
-                    embed.add_field(name="📝 만료된 경고 내용", value=f"```\n{reason}\n```", inline=False)
-                    embed.add_field(name="📉 현재 잔여 횟수", value=f"**{count}회**", inline=True)
-                    embed.add_field(name="⚙️ 처리 방식", value="시스템 자동 만료", inline=True)
+                    embed.add_field(name=" 만료된 경고 내용", value=f"```\n{reason}\n```", inline=False)
+                    embed.add_field(name=" 현재 잔여 횟수", value=f"**{count}회**", inline=True)
+                    embed.add_field(name=" 처리 방식", value="시스템 자동 만료", inline=True)
                     embed.set_thumbnail(url=member.display_avatar.url)
                     embed.set_footer(text=f"ID: {w_id} | Auto Expired")
                     await log_ch.send(embed=embed)
@@ -178,7 +178,7 @@ async def warn(interaction: discord.Interaction, 대상: discord.Member, 사유:
         # [제제 기록 채널]로 전송
         log_channel = bot.get_channel(settings[0])
         if log_channel:
-            embed = discord.Embed(title="🚨 유저 경고 부여", color=discord.Color.red())
+            embed = discord.Embed(title=" 유저 경고 부여", color=discord.Color.red())
             embed.add_field(name="대상 유저", value=f"{대상.mention}", inline=True)
             embed.add_field(name="현재 경고 횟수", value=f"**{count}회**", inline=True)
             embed.add_field(name="만료 예정일", value=f"<t:{new_expire}:F>", inline=False)
@@ -239,7 +239,7 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
     cur.execute("SELECT reason, expires_at FROM warnings WHERE user_id = ? AND active = 1 ORDER BY expires_at ASC", (대상.id,))
     rows = cur.fetchall()
     count = len(rows)
-    embed = discord.Embed(title=f"📊 {대상.display_name} 경고 리포트", color=discord.Color.gold())
+    embed = discord.Embed(title=f" {대상.display_name} 경고 조회", color=discord.Color.gold())
     embed.add_field(name="현재 활성 경고", value=f"총 **{count}**회", inline=False)
     if not rows: embed.description = "✅ 활성화된 경고가 없습니다."
     else:
