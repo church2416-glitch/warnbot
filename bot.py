@@ -221,17 +221,51 @@ async def reset_db(interaction: discord.Interaction):
 scheduler = AsyncIOScheduler()
 
 async def remove_expired_warnings():
+    """시간이 지난 경고를 자동으로 해제하고 로그 채널에 알림을 보냅니다."""
     now_ts = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+    
+    # 만료된 경고들 가져오기
     cur.execute("SELECT id, user_id, reason FROM warnings WHERE active = 1 AND expires_at <= ?", (now_ts,))
     expired = cur.fetchall()
+
     for w_id, user_id, reason in expired:
+        # 1. DB 상태 업데이트
         cur.execute("UPDATE warnings SET active = 0 WHERE id = ?", (w_id,))
         conn.commit()
+
+        # 2. 모든 서버를 돌며 해당 유저 찾기 및 역할 갱신
         for guild in bot.guilds:
             member = guild.get_member(user_id)
-            if member:
-                count = get_active_warnings(user_id)
-                await update_warning_role(member, count)
+            if not member:
+                try:
+                    member = await guild.fetch_member(user_id)
+                except:
+                    continue # 유저를 찾을 수 없는 서버는 패스
+
+            # 역할 갱신
+            count = get_active_warnings(user_id)
+            await update_warning_role(member, count)
+
+            # 3. 로그 채널에 자동 만료 알림 전송
+            settings = get_guild_settings(guild.id)
+            if settings and settings[0]: # log_channel_id가 설정되어 있다면
+                log_channel = bot.get_channel(settings[0])
+                if log_channel:
+                    embed = discord.Embed(
+                        title="경고 기간 만료 (자동 해제)",
+                        description=f"{member.mention}님의 경고 기간이 종료되었습니다.",
+                        color=discord.Color.blue(),
+                        timestamp=datetime.datetime.now(datetime.timezone.utc)
+                    )
+                    embed.add_field(name="경고 사유", value=f"```\n{reason}\n```", inline=False)
+                    embed.add_field(name="현재 잔여 경고", value=f"**{count}회**", inline=True)
+                    embed.set_thumbnail(url=member.display_avatar.url if member.display_avatar else None)
+                    embed.set_footer(text=f"서버: {guild.name}")
+                    
+                    try:
+                        await log_channel.send(embed=embed)
+                    except:
+                        pass
 
 @bot.event
 async def on_ready():
