@@ -116,13 +116,13 @@ async def remove_expired_warnings():
                     log_ch = bot.get_channel(settings[1]) or await bot.fetch_channel(settings[1])
                     if log_ch:
                         embed = discord.Embed(
-                            title="🕒 경고 기간 만료 알림",
+                            title="경고 기간 만료 알림",
                             description=f"{member.mention}님의 경고가 자동 해제되었습니다.",
                             color=0x3498db,
                             timestamp=datetime.datetime.now(datetime.timezone.utc)
                         )
-                        embed.add_field(name="📝 만료된 내용", value=f"```\n{reason}\n```", inline=False)
-                        embed.add_field(name="📉 잔여 횟수", value=f"**{count}회**", inline=True)
+                        embed.add_field(name="경고 내용", value=f"```\n{reason}\n```", inline=False)
+                        embed.add_field(name="잔여 횟수", value=f"**{count}회**", inline=True)
                         embed.set_footer(text=f"경고 ID: {w_id} | 자동 처리")
                         if member.display_avatar: embed.set_thumbnail(url=member.display_avatar.url)
                         await log_ch.send(embed=embed)
@@ -132,8 +132,8 @@ async def remove_expired_warnings():
 @bot.tree.command(name="설정", description="서버의 경고 시스템 채널과 역할을 설정합니다.")
 @app_commands.describe(작업="확인 또는 신규설정", 제제채널="경고 알림 채널", 해제채널="해제/만료 알림 채널")
 @app_commands.choices(작업=[
-    app_commands.Choice(name="🔍 설정 확인", value="check"),
-    app_commands.Choice(name="💾 신규 설정 저장", value="save")
+    app_commands.Choice(name="설정 확인", value="check"),
+    app_commands.Choice(name="신규 설정 저장", value="save")
 ])
 @app_commands.checks.has_permissions(administrator=True)
 async def setup_integrated(interaction: discord.Interaction, 작업: str, 제제채널: discord.TextChannel = None, 해제채널: discord.TextChannel = None, 경고1단계: discord.Role = None, 경고2단계: discord.Role = None, 경고3단계: discord.Role = None, 관리자역할: discord.Role = None):
@@ -222,7 +222,7 @@ async def removewarn(interaction: discord.Interaction, 대상: discord.Member):
         if settings and settings[1]:
             log_ch = bot.get_channel(settings[1])
             if log_ch:
-                embed = discord.Embed(title="🗑️ 경고 수동 해제", color=0x2ecc71, timestamp=datetime.datetime.now(datetime.timezone.utc))
+                embed = discord.Embed(title="수동 해제", color=0x2ecc71, timestamp=datetime.datetime.now(datetime.timezone.utc))
                 embed.add_field(name="대상", value=대상.mention, inline=True)
                 embed.add_field(name="처리자", value=interaction.user.mention, inline=True)
                 embed.add_field(name="해제된 사유", value=f"```\n{reason}\n```", inline=False)
@@ -242,9 +242,9 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
         cur.execute("SELECT reason, expires_at FROM warnings WHERE user_id = ? AND active = 1 ORDER BY expires_at ASC", (대상.id,))
         rows = cur.fetchall()
     
-    embed = discord.Embed(title=f"📊 {대상.display_name} 경고 기록", color=0xf1c40f)
+    embed = discord.Embed(title=f" {대상.display_name} 경고 조회", color=0xf1c40f)
     if not rows:
-        embed.description = "깨끗합니다! 활성화된 경고가 없습니다."
+        embed.description = "활성화된 경고가 없습니다."
     else:
         desc = ""
         for i, r in enumerate(rows, 1):
@@ -262,12 +262,12 @@ async def reset_db(interaction: discord.Interaction):
         cur.execute("DROP TABLE IF EXISTS warnings")
         cur.execute("DROP TABLE IF EXISTS settings")
     init_db()
-    await interaction.response.send_message("✅ 모든 데이터가 초기화되었습니다. 다시 `/설정`을 해주세요.", ephemeral=True)
+    await interaction.response.send_message(" 모든 데이터가 초기화되었습니다. 다시 `/설정`을 해주세요.", ephemeral=True)
 
 @bot.tree.command(name="재부팅", description="봇을 재부팅합니다.")
 @app_commands.checks.has_permissions(administrator=True)
 async def reboot(interaction: discord.Interaction):
-    await interaction.response.send_message("🔄 봇을 재부팅합니다...", ephemeral=True)
+    await interaction.response.send_message(" 봇을 재부팅합니다...", ephemeral=True)
     os._exit(0)
 
 # --- 실행부 ---
