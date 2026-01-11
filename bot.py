@@ -84,48 +84,38 @@ async def update_warning_role(member: discord.Member, count: int):
 # --- 자동 시스템 (만료 체크) ---
 
 async def remove_expired_warnings():
-    # 현재 시간 (UTC 기준)
     now_ts = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
-    
-    # 만료된 경고 조회
     cur.execute("SELECT id, user_id, reason FROM warnings WHERE active = 1 AND expires_at <= ?", (now_ts,))
     expired = cur.fetchall()
 
-    if not expired:
-        return
-
     for w_id, user_id, reason in expired:
-        # 1. DB 업데이트 (비활성화)
         cur.execute("UPDATE warnings SET active = 0 WHERE id = ?", (w_id,))
         conn.commit()
 
-        # 2. 서버별 유저 찾기 및 로그 전송
         for guild in bot.guilds:
-            member = guild.get_member(user_id)
-            if not member:
-                try:
-                    member = await guild.fetch_member(user_id)
-                except:
-                    continue
+            member = guild.get_member(user_id) or await guild.fetch_member(user_id)
+            if not member: continue
             
-            # 횟수 계산 및 역할 업데이트
             count = get_active_warnings(user_id)
             await update_warning_role(member, count)
 
-            # [해제 기록 채널]로 로그 전송
             settings = get_guild_settings(guild.id)
-            if settings and settings[1]: # removal_log_channel_id
+            if settings and settings[1]:
                 log_ch = bot.get_channel(settings[1])
                 if log_ch:
-                    embed = discord.Embed(title="🕒 경고 기간 만료 (자동 해제)", color=discord.Color.blue())
-                    embed.add_field(name="대상 유저", value=f"{member.mention}", inline=True)
-                    embed.add_field(name="현재 잔여 횟수", value=f"**{count}회**", inline=True)
-                    embed.add_field(name="만료된 사유", value=f"```\n{reason}\n```", inline=False)
-                    embed.set_footer(text=f"ID: {w_id}")
-                    try:
-                        await log_ch.send(embed=embed)
-                    except:
-                        pass
+                    embed = discord.Embed(
+                        title="🕒 경고 기간 만료 알림",
+                        description=f"{member.mention}님의 경고가 시간이 경과되어 자동 해제되었습니다.",
+                        color=0x3498db, # 하늘색
+                        timestamp=datetime.datetime.now(datetime.timezone.utc)
+                    )
+                    embed.add_field(name="📝 만료된 경고 내용", value=f"```\n{reason}\n```", inline=False)
+                    embed.add_field(name="📉 현재 잔여 횟수", value=f"**{count}회**", inline=True)
+                    embed.add_field(name="⚙️ 처리 방식", value="시스템 자동 만료", inline=True)
+                    embed.set_thumbnail(url=member.display_avatar.url)
+                    embed.set_footer(text=f"ID: {w_id} | Auto Expired")
+                    await log_ch.send(embed=embed)
+
 
 # --- 명령어 ---
 
@@ -212,23 +202,33 @@ async def removewarn(interaction: discord.Interaction, 대상: discord.Member):
 
     async def select_callback(inter2: discord.Interaction):
         selected_id = int(select.values[0])
+        # 선택한 경고의 상세 정보 가져오기 (로그용)
+        cur.execute("SELECT reason FROM warnings WHERE id = ?", (selected_id,))
+        warn_reason = cur.fetchone()[0]
+
         cur.execute("UPDATE warnings SET active = 0 WHERE id = ?", (selected_id,))
         conn.commit()
         
         after_count = get_active_warnings(대상.id)
         await update_warning_role(대상, after_count)
 
-        # [해제 기록 채널]로 전송
         settings = get_guild_settings(interaction.guild.id)
         if settings and settings[1]:
             log_ch = bot.get_channel(settings[1])
             if log_ch:
-                embed = discord.Embed(title="🗑️ 유저 경고 수동 해제", color=discord.Color.green())
-                embed.add_field(name="대상 유저", value=대상.mention, inline=True)
-                embed.add_field(name="남은 횟수", value=f"**{after_count}회**", inline=True)
-                embed.set_footer(text=f"해제 관리자: {interaction.user.display_name}")
+                embed = discord.Embed(
+                    title=" 경고 수동 해제 알림",
+                    description=f"{대상.mention}님의 경고 기록이 관리자에 의해 해제되었습니다.",
+                    color=0x2ecc71, # 에메랄드 그린
+                    timestamp=datetime.datetime.now(datetime.timezone.utc)
+                )
+                embed.add_field(name=" 경고 사유", value=f"```\n{warn_reason}\n```", inline=False)
+                embed.add_field(name=" 담당 관리자", value=interaction.user.mention, inline=True)
+                embed.add_field(name=" 남은 경고 횟수", value=f"**{after_count}회**", inline=True)
+                embed.set_thumbnail(url=대상.display_avatar.url)
+                embed.set_footer(text=f"ID: {selected_id} | Manual Release")
                 await log_ch.send(embed=embed)
-        await inter2.response.edit_message(content=f"✅ 경고 해제 완료 (현재 **{after_count}**회)", view=None)
+        await inter2.response.edit_message(content=f"✅ {대상.mention}님의 경고(ID: {selected_id})를 해제했습니다.", view=None)
 
     view = discord.ui.View(); select.callback = select_callback; view.add_item(select)
     await interaction.response.send_message(f"**{대상.display_name}**님의 해제 메뉴", view=view, ephemeral=True)
