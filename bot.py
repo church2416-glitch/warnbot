@@ -134,7 +134,7 @@ async def warn(interaction: discord.Interaction, 대상: discord.Member, 사유:
 
         log_channel = bot.get_channel(settings[0])
         if log_channel:
-            embed = discord.Embed(title="🚨 유저 경고 부여", color=discord.Color.red(), timestamp=now)
+            embed = discord.Embed(title="유저 경고 부여", color=discord.Color.red(), timestamp=now)
             embed.add_field(name="대상 유저", value=f"{대상.mention} ({대상.name})", inline=True)
             embed.add_field(name="현재 경고 횟수", value=f"**{current_count}회**", inline=True)
             embed.add_field(name="누적 만료일", value=f"<t:{new_expire}:F> (<t:{new_expire}:R>)", inline=False)
@@ -169,7 +169,7 @@ async def removewarn(interaction: discord.Interaction, 대상: discord.Member):
         if settings and settings[0]:
             log_ch = bot.get_channel(settings[0])
             if log_ch:
-                embed = discord.Embed(title="🗑️ 유저 경고 해제", color=discord.Color.green())
+                embed = discord.Embed(title="유저 경고 해제", color=discord.Color.green())
                 embed.add_field(name="대상 유저", value=대상.mention, inline=True)
                 embed.add_field(name="남은 경고 횟수", value=f"**{after_count}회**", inline=True)
                 embed.set_footer(text=f"해제 관리자: {interaction.user.display_name}")
@@ -186,7 +186,7 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
     rows = cur.fetchall()
     count = len(rows)
     
-    embed = discord.Embed(title=f"📊 {대상.display_name} 경고 리포트", color=discord.Color.gold())
+    embed = discord.Embed(title=f"{대상.display_name} 경고 조회", color=discord.Color.gold())
     embed.add_field(name="현재 활성 경고", value=f"총 **{count}**회", inline=False)
     
     if not rows:
@@ -203,7 +203,7 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
 @bot.tree.command(name="재부팅", description="봇을 재시작합니다. (관리자 전용)")
 @app_commands.checks.has_permissions(administrator=True)
 async def reboot(interaction: discord.Interaction):
-    await interaction.response.send_message("🔄 봇을 재부팅합니다...", ephemeral=True)
+    await interaction.response.send_message("봇을 재부팅합니다...", ephemeral=True)
     conn.close()
     os._exit(0)
 
