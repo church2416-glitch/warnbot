@@ -252,7 +252,7 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
     cur.execute("SELECT reason, expires_at FROM warnings WHERE user_id = ? AND active = 1 ORDER BY expires_at ASC", (대상.id,))
     rows = cur.fetchall()
     count = len(rows)
-    embed = discord.Embed(title=f" {대상.display_name} 경고 조회", color=discord.Color.gold())
+    embed = discord.Embed(title=f"📊 {대상.display_name} 경고 조회", color=discord.Color.gold())
     embed.add_field(name="현재 활성 경고", value=f"총 **{count}**회", inline=False)
     if not rows: embed.description = "✅ 활성화된 경고가 없습니다."
     else:
@@ -260,7 +260,21 @@ async def check_warns(interaction: discord.Interaction, 대상: discord.Member):
         embed.description = "\n".join(warn_list)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# ... (재부팅, 초기화 명령어는 이전과 동일)
+@bot.tree.command(name="초기화", description="DB를 완전 초기화하고 테이블을 재구성합니다.")
+@app_commands.checks.has_permissions(administrator=True)
+async def reset_db(interaction: discord.Interaction):
+    cur.execute("DROP TABLE IF EXISTS warnings")
+    cur.execute("DROP TABLE IF EXISTS settings")
+    conn.commit()
+    create_tables() # 테이블 다시 생성
+    await interaction.response.send_message("✅ 모든 데이터베이스가 초기화되었습니다. 다시 `/설정`을 진행해주세요.", ephemeral=True)
+
+@bot.tree.command(name="재부팅", description="봇 프로세스를 종료하고 재시작합니다.")
+@app_commands.checks.has_permissions(administrator=True)
+async def reboot(interaction: discord.Interaction):
+    await interaction.response.send_message("🔄 봇을 재부팅합니다...", ephemeral=True)
+    conn.close()
+    os._exit(0)
 
 @bot.event
 async def on_ready():
